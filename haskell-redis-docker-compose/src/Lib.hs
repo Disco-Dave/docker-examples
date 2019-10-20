@@ -1,10 +1,3 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GeneralisedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeOperators #-}
-
 module Lib
   ( app
   )
@@ -13,6 +6,7 @@ where
 import           Control.Exception              ( Exception
                                                 , throwIO
                                                 )
+import           Data.Function                  ( (&) )
 import           Data.Proxy                     ( Proxy(..) )
 import           Data.Typeable                  ( Typeable )
 import           Network.Socket                 ( SockAddr )
@@ -60,22 +54,28 @@ getVisitCount
   -> m Text.Text
 getVisitCount sockAddr = do
   redisConn  <- MTL.ask
-  visitCount <- MTL.liftIO . Redis.runRedis redisConn $ do
-    let key = BS.pack $ show sockAddr
-    query <- Redis.get key
-    case query of
-      Left  _       -> MTL.liftIO $ throwIO RedisException
-      Right Nothing -> do
-        Redis.set key "1"
-        return 1
-      Right (Just count) -> 
-        case readMaybe @Int $ BS.unpack count of
-          Nothing       -> MTL.liftIO $ throwIO InvalidCountFormat
-          Just oldCount -> do
-            let newCount = oldCount + 1
-            Redis.set key (BS.pack $ show newCount)
-            return newCount
+  visitCount <-
+    getAndIncrementCount sockAddr 
+      & Redis.runRedis redisConn 
+      & MTL.liftIO
   return $ Text.concat ["Your visit count is ", Text.pack $ show visitCount]
+
+getAndIncrementCount :: SockAddr -> Redis.Redis Int
+getAndIncrementCount sockAddr = do
+  let key = BS.pack $ show sockAddr
+  query <- Redis.get key
+  case query of
+    Left  _       -> MTL.liftIO $ throwIO RedisException
+    Right Nothing -> do
+      Redis.set key "1"
+      return 1
+    Right (Just count) -> 
+      case readMaybe @Int $ BS.unpack count of
+        Nothing       -> MTL.liftIO $ throwIO InvalidCountFormat
+        Just oldCount -> do
+          let newCount = oldCount + 1
+          Redis.set key (BS.pack $ show newCount)
+          return newCount
 
 data RedisException = RedisException
   deriving (Show, Typeable)
