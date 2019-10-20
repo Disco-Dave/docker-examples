@@ -1,15 +1,15 @@
 version: "3.7"
 
 services:
-  web-server:
+  web:
     build: .
     environment:
-      - REDIS_HOSTNAME="redis"
+      - REDIS_HOSTNAME=redis
     ports:
       - target: 8081
         published: 8081
     depends_on:
       - redis
 
-    redis:
-      image: "redis:alpine"
+  redis:
+    image: redis:alpine
