@@ -2,7 +2,7 @@ module Main where
 
 import           Data.Function                  ( (&) )
 import           Data.Maybe                     ( fromMaybe )
-import           Lib
+import           Lib                            ( app )
 import           Network.Socket                 ( HostName
                                                 , PortNumber
                                                 )

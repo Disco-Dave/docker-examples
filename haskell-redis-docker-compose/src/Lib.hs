@@ -58,7 +58,7 @@ getVisitCount sockAddr = do
     getAndIncrementCount sockAddr 
       & Redis.runRedis redisConn 
       & MTL.liftIO
-  return $ Text.concat ["Your visit count is ", Text.pack $ show visitCount]
+  pure $ Text.concat ["Your visit count is ", Text.pack $ show visitCount]
 
 getAndIncrementCount :: SockAddr -> Redis.Redis Int
 getAndIncrementCount sockAddr = do
@@ -68,14 +68,14 @@ getAndIncrementCount sockAddr = do
     Left  _       -> MTL.liftIO $ throwIO RedisException
     Right Nothing -> do
       Redis.set key "1"
-      return 1
+      pure 1
     Right (Just count) -> 
       case readMaybe @Int $ BS.unpack count of
         Nothing       -> MTL.liftIO $ throwIO InvalidCountFormat
         Just oldCount -> do
           let newCount = oldCount + 1
           Redis.set key (BS.pack $ show newCount)
-          return newCount
+          pure newCount
 
 data RedisException = RedisException
   deriving (Show, Typeable)
