@@ -58,7 +58,7 @@ getVisitCount sockAddr = do
     getAndIncrementCount sockAddr 
       & Redis.runRedis redisConn 
       & MTL.liftIO
-  pure $ Text.concat ["Your visit count is ", Text.pack $ show visitCount]
+  pure $ Text.concat ["Your visit count is ", Text.pack $ show visitCount, ", (", Text.pack $ show sockAddr ,")"]
 
 getAndIncrementCount :: SockAddr -> Redis.Redis Int
 getAndIncrementCount sockAddr = do

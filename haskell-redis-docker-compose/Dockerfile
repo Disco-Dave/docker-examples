@@ -1,10 +1,12 @@
 FROM ubuntu:latest AS build
 
-COPY . .
-
 RUN apt-get update && apt-get install -y wget
 RUN wget -qO- https://get.haskellstack.org/ | sh 
 
+COPY stack.yaml stack.yaml.lock package.yaml ./
+RUN stack build --dependencies-only
+
+COPY . .
 RUN stack install
 
 
